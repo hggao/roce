@@ -2,9 +2,9 @@
 
 CC = gcc
 CCFLAGS = -g -O0
-INCS = -I.
+INCS = -I. -I/usr/include
 CFLAGS = $(CCFLAGS) $(INCS)
-LIBS = -lpthread
+LIBS = -libverbs
 DEPS = roce.h
 SVROBJS = rocesvr.o roce.o
 CLIOBJS = rocecli.o roce.o

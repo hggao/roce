@@ -66,7 +66,7 @@ void client_interact(int sockfd)
 	}
 }
 
-int client_run_tasks(int sockfd)
+int client_run_tasks(int sockfd, struct user_parameter *param)
 {
     char *msg = "This is the only message to transfer";
 	char buff[MAX_PACKET_LEN + 1];
@@ -78,6 +78,13 @@ int client_run_tasks(int sockfd)
 	bzero(buff, sizeof(buff));
 	n = recv_data(sockfd, buff);
 	printf("From Server : %s\n", buff);
+
+    struct ibv_context *ibv_ctx;
+    ibv_ctx = open_roce_dev(param);
+
+	printf("Pending doing something here......\n");
+
+    close_roce_dev(ibv_ctx);
 
     return 0;
 }
@@ -103,7 +110,7 @@ int main(int argc, char *argv[])
     if (uparam.interactive_mode) {
         client_interact(sockfd);
     } else {
-        client_run_tasks(sockfd);
+        client_run_tasks(sockfd, &uparam);
     }
 
     // close the socket
