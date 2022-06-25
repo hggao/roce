@@ -12,6 +12,35 @@
 
 #include "roce.h"
 
+int connect_server(struct user_parameter *uparam)
+{
+    int fd;
+    struct sockaddr_in servaddr;
+
+    // socket create and verification
+    fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (fd == -1) {
+        printf("socket creation failed...\n");
+        return -1;
+    }
+    printf("Socket successfully created..\n");
+
+    bzero(&servaddr, sizeof(servaddr));
+    servaddr.sin_family = AF_INET;
+    servaddr.sin_port = htons(DEFAULT_SERVER_PORT);
+    if (inet_pton(AF_INET, uparam->server_ip, &servaddr.sin_addr) <= 0) {
+        printf("inet_pton error occured\n");
+        return -2;
+    }
+    // connect the client socket to server socket
+    if (connect(fd, (struct sockaddr*)&servaddr, sizeof(servaddr)) != 0) {
+        printf("connection with the server failed...\n");
+        return -3;
+    }
+    printf("connected to the server..\n");
+    return fd;
+}
+
 void client_interact(int sockfd)
 {
 	char buff[MAX_PACKET_LEN + 1];
@@ -37,41 +66,45 @@ void client_interact(int sockfd)
 	}
 }
 
+int client_run_tasks(int sockfd)
+{
+    char *msg = "This is the only message to transfer";
+	char buff[MAX_PACKET_LEN + 1];
+    int n;
+
+    send_data(sockfd, msg, strlen(msg));
+    printf("Sent Server : %s\n", msg);
+
+	bzero(buff, sizeof(buff));
+	n = recv_data(sockfd, buff);
+	printf("From Server : %s\n", buff);
+
+    return 0;
+}
+
 int main(int argc, char *argv[])
 {
-    int sockfd, connfd;
+    int sockfd;
     struct sockaddr_in servaddr;
+    struct user_parameter uparam;
+
+    if (parse_parameters(argc, argv, &uparam, 0) != 0) {
+        print_usage(argv[0]);
+        return 1;
+    }
 
     printf("Hello there! This is RoCE Client App\n");
-    if (argc != 2) {
-        printf("\n Usage: %s <ip of server> \n",argv[0]);
-        return 1;
+
+    sockfd = connect_server(&uparam);
+    if (sockfd < 0) {
+        return 2;
     }
 
-    // socket create and verification
-    sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    if (sockfd == -1) {
-        printf("socket creation failed...\n");
-        return -1;
+    if (uparam.interactive_mode) {
+        client_interact(sockfd);
+    } else {
+        client_run_tasks(sockfd);
     }
-    printf("Socket successfully created..\n");
-
-    bzero(&servaddr, sizeof(servaddr));
-    servaddr.sin_family = AF_INET;
-    servaddr.sin_port = htons(DEFAULT_SERVER_PORT);
-    if (inet_pton(AF_INET, argv[1], &servaddr.sin_addr) <= 0) {
-        printf("inet_pton error occured\n");
-        return 1;
-    }
-    // connect the client socket to server socket
-    if (connect(sockfd, (struct sockaddr*)&servaddr, sizeof(servaddr)) != 0) {
-        printf("connection with the server failed...\n");
-        return -2;
-    }
-    printf("connected to the server..\n");
-
-    // function for chat
-    client_interact(sockfd);
 
     // close the socket
     close(sockfd);
