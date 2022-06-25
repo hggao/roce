@@ -41,8 +41,9 @@ int connect_server(struct user_parameter *uparam)
     return fd;
 }
 
-void client_interact(int sockfd)
+void client_interact(void)
 {
+/*
 	char buff[MAX_PACKET_LEN + 1];
 	int n;
 
@@ -64,35 +65,36 @@ void client_interact(int sockfd)
 		n = recv_data(sockfd, buff);
 		printf("From Server : %s\n", buff);
 	}
+*/
+    getchar();
 }
 
-int client_run_tasks(int sockfd, struct user_parameter *param)
+int client_run_tasks(struct user_parameter *param)
 {
-    char *msg = "This is the only message to transfer";
-	char buff[MAX_PACKET_LEN + 1];
-    int n;
+    struct roce_context rocectx;
 
-    send_data(sockfd, msg, strlen(msg));
-    printf("Sent Server : %s\n", msg);
+    rocectx.sockfd = connect_server(param);
+    if (rocectx.sockfd < 0) {
+        return 2;
+    }
 
-	bzero(buff, sizeof(buff));
-	n = recv_data(sockfd, buff);
-	printf("From Server : %s\n", buff);
+    if (open_roce_dev(param, &rocectx) != 0) {
+        return -1;
+    }
 
-    struct ibv_context *ibv_ctx;
-    ibv_ctx = open_roce_dev(param);
+    if (roce_send(&rocectx) != 0) {
+        printf("Error perform roce send.\n");
+    }
 
-	printf("Pending doing something here......\n");
+    close_roce_dev(&rocectx);
 
-    close_roce_dev(ibv_ctx);
+    close(rocectx.sockfd);
 
     return 0;
 }
 
 int main(int argc, char *argv[])
 {
-    int sockfd;
-    struct sockaddr_in servaddr;
     struct user_parameter uparam;
 
     if (parse_parameters(argc, argv, &uparam, 0) != 0) {
@@ -102,19 +104,11 @@ int main(int argc, char *argv[])
 
     printf("Hello there! This is RoCE Client App\n");
 
-    sockfd = connect_server(&uparam);
-    if (sockfd < 0) {
-        return 2;
-    }
-
     if (uparam.interactive_mode) {
-        client_interact(sockfd);
+        client_interact();
     } else {
-        client_run_tasks(sockfd, &uparam);
+        client_run_tasks(&uparam);
     }
-
-    // close the socket
-    close(sockfd);
 
     printf("Goodbye!\n");
     return 0;
