@@ -6,8 +6,8 @@ INCS = -I.
 CFLAGS = $(CCFLAGS) $(INCS)
 LIBS = -lpthread
 DEPS = roce.h
-SVROBJS = rocesvr.o
-CLIOBJS = rocecli.o 
+SVROBJS = rocesvr.o roce.o
+CLIOBJS = rocecli.o roce.o
 
 %.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
