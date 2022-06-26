@@ -9,16 +9,20 @@ DEPS = roce.h
 SVROBJS = rocesvr.o roce.o
 CLIOBJS = rocecli.o roce.o
 
+BINDIR=bin
+
 %.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-all: rocesvr rocecli
+all: $(BINDIR)/rocesvr $(BINDIR)/rocecli
 
-rocesvr: $(SVROBJS)
+$(BINDIR)/rocesvr: $(SVROBJS)
+	if [ ! -d "$(BINDIR)" ]; then mkdir -p "$(BINDIR)"; fi
 	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
 
-rocecli: $(CLIOBJS)
+$(BINDIR)/rocecli: $(CLIOBJS)
+	if [ ! -d "$(BINDIR)" ]; then mkdir -p "$(BINDIR)"; fi
 	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
 
 clean:
-	rm -f *.o rocesvr rocecli
+	rm -rf *.o bin
