@@ -52,5 +52,4 @@ Mkfile.old
 dkms.conf
 
 # Specific to this project
-rocecli
-rocesvr
+bin
